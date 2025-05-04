@@ -19,9 +19,8 @@ Score Position: Our evaluation function based on two facotrs
    goes for dropping a piece into a 3-in-a-row; It's more desirable than
    dropping it into a 2-in-a-row
 '''
-def score_position(board, piece):
+def score_position(board):
     score = 0
-    opponent_piece = PLAYER
     
     def count_lines(player, x_in_a_row):
         count = 0
@@ -49,27 +48,24 @@ def score_position(board, piece):
         return count
 
     # Certain piece positions have advantage
-    evaluation_board = numpy.array([[3, 4, 5,  7,  5,  4, 3],
-                                    [4, 6, 8,  10, 8,  6, 4],
-                                    [5, 8, 10, 13, 10, 8, 5],
-                                    [5, 8, 10, 13, 10, 8, 5],
-                                    [4, 6, 8,  10, 8,  6, 4],
-                                    [3, 4, 5,  7,  5,  4, 3]])
+    evaluation_board = numpy.array([[1, 2, 2, 3, 2, 2, 1],
+                                 [2, 2, 3, 5, 3, 2, 2],
+                                 [2, 3, 4, 6, 4, 3, 2],
+                                 [2, 3, 4, 6, 4, 3, 2],
+                                 [2, 2, 3, 5, 3, 2, 2],
+                                 [1, 2, 2, 3, 2, 2, 1]])
     
     # Better score if their pieces are in desirable positions
-    piece_score      = numpy.sum(evaluation_board[board == piece])
-    opponent_score   = numpy.sum(evaluation_board[board == opponent_piece])
+    computer_score = numpy.sum(evaluation_board[board == COMPUTER])
+    score += computer_score
 
     # Calculate points for current piece (COMPUTER) based on winning lines
-    score += count_lines(COMPUTER, 3) * 100
-    score += count_lines(COMPUTER, 2) * 75
+    score += count_lines(COMPUTER, 3) * 450
+    score += count_lines(COMPUTER, 2) * 10
 
-    # Calculate points opponent (PLAYER) based on winning lines
-    score -= count_lines(PLAYER, 3) * 90
-    score -= count_lines(PLAYER, 2) * 60
-
-    # Consider the positions of each individual piece
-    score += piece_score - opponent_score
+    # Recalculate points based on opponent's number of winning lines
+    score -= count_lines(PLAYER, 3) * 500
+    score -= count_lines(PLAYER, 2) * 8
 
     return score
 
@@ -93,14 +89,14 @@ def minimax(board, depth, alpha, beta, max_player):
     if depth == 0 or is_terminal_move:
         if is_terminal_move:
             if winning_move(board, COMPUTER):
-                return (None, 100000)
+                return (None, 1000000)
             elif winning_move(board, PLAYER):
-                return (None, -100000)
+                return (None, -1000000)
             else:
                 return (None, 0)
             
         else:
-            return (None, score_position(board, COMPUTER))
+            return (None, score_position(board))
         
     # Maximize computer
     if max_player:
