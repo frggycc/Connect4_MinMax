@@ -79,7 +79,7 @@ class ConnectFour:
             btn = tk.Button(
                 difficulty_frame,
                 text=["Easy", "Medium", "Hard"][level-1],
-                command=lambda l=level: self.set_difficulty(l),
+                command=lambda l=level * 2: self.set_difficulty(l),
                 font=('Inter', 10, 'bold'),
                 bg='#1e40af',  # Changed: All buttons start with same color
                 fg='black',
@@ -247,18 +247,51 @@ class ConnectFour:
     def score_position(self, board):
         score = 0
 
-        evaluation_board = np.array([[3, 4, 5,  7,  5,  4, 3],
-                                    [4, 6, 8,  10, 8,  6, 4],
-                                    [5, 8, 10, 13, 10, 8, 5],
-                                    [5, 8, 10, 13, 10, 8, 5],
-                                    [4, 6, 8,  10, 8,  6, 4],
-                                    [3, 4, 5,  7,  5,  4, 3]])
+        evaluation_board = np.array([[1, 2, 2, 3, 2, 2, 1],
+                                     [2, 2, 3, 5, 3, 2, 2],
+                                     [2, 3, 4, 6, 4, 3, 2],
+                                     [2, 3, 4, 6, 4, 3, 2],
+                                     [2, 2, 3, 5, 3, 2, 2],
+                                     [1, 2, 2, 3, 2, 2, 1]])
         
-        # Calculate the scores of the player and the opponent
-        computer_score = np.sum(evaluation_board[board == COMPUTER])
-        player_score   = np.sum(evaluation_board[board == PLAYER])
+        # Calculate the scores of the computer based on position on board
+        score += np.sum(evaluation_board[board == COMPUTER])
 
-        return computer_score - player_score
+        def count_lines(player, x_in_a_row):
+            count = 0
+
+            # Horizontal
+            for row in range(ROWS):
+                for col in range(COLUMNS - x_in_a_row + 1):
+                    if all(board[row][col + i] == player for i in range(x_in_a_row)):
+                        count += 1
+            # Vertical
+            for row in range(ROWS - x_in_a_row + 1):
+                for col in range(COLUMNS):
+                    if all(board[row + i][col] == player for i in range(x_in_a_row)):
+                        count += 1
+            # Diagonal (positive)
+            for row in range(ROWS - x_in_a_row + 1):
+                for col in range(COLUMNS - x_in_a_row + 1):
+                    if all(board[row + i][col + i] == player for i in range(x_in_a_row)):
+                        count += 1
+            # Diagonal (negative)
+            for row in range(x_in_a_row - 1, ROWS):
+                for col in range(COLUMNS - x_in_a_row + 1):
+                    if all(board[row - i][col + i] == player for i in range(x_in_a_row)):
+                        count += 1
+            return count
+
+        # Calculate points for current piece (COMPUTER) based on winning lines
+        score += count_lines(COMPUTER, 3) * 450
+        score += count_lines(COMPUTER, 2) * 10
+
+        # Recalculate points based on opponent's number of winning lines
+        # If opponent has 3 in a row, priotize stopping it
+        score -= count_lines(PLAYER, 3) * 500
+        score -= count_lines(PLAYER, 2) * 8
+
+        return score
 
     def is_end_of_game(self, board):
         return (self.check_winner(COMPUTER) or 
@@ -272,9 +305,9 @@ class ConnectFour:
         if depth == 0 or is_terminal:
             if is_terminal:
                 if self.check_winner(COMPUTER):
-                    return (None, 100000)
+                    return (None, 1000000)
                 elif self.check_winner(PLAYER):
-                    return (None, -100000)
+                    return (None, -1000000)
                 else:  # Game is over, no more valid moves
                     return (None, 0)
             else:  # Depth is zero
