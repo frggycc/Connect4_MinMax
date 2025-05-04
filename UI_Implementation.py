@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import messagebox
 import numpy as np
@@ -29,7 +28,8 @@ class ConnectFour:
         self.board = np.zeros((ROWS, COLUMNS), dtype=int)
         self.game_over = False
         self.current_player = PLAYER
-        self.ai_difficulty = 2  # Default to medium difficulty
+        self.ai_difficulty = None  # Changed: No default difficulty
+        self.game_started = False  # New: Track if game has started
         
         # Create difficulty controls
         self.create_difficulty_controls()
@@ -40,7 +40,7 @@ class ConnectFour:
         # Create status label
         self.status_label = tk.Label(
             self.window,
-            text="Your turn!",
+            text="Please select difficulty to start",  # Changed: Initial message
             font=('Inter', 14, 'bold'),
             bg='#1e3a8a',
             fg='white'
@@ -52,10 +52,11 @@ class ConnectFour:
             self.window,
             text="New Game",
             command=self.reset_game,
-            font=('Inter', 12),
+            font=('Inter', 12, 'bold'),
             bg='#3b82f6',
-            fg='white',
-            activebackground='#2563eb'
+            fg='black',
+            activebackground='#2563eb',
+            state=tk.DISABLED  # Changed: Initially disabled
         )
         self.reset_button.pack(pady=10)
 
@@ -67,25 +68,28 @@ class ConnectFour:
         tk.Label(
             difficulty_frame,
             text="AI Difficulty:",
-            font=('Inter', 12),
+            font=('Inter', 12, 'bold'),
             bg='#1e3a8a',
             fg='white'
         ).pack(side=tk.LEFT, padx=5)
+        
+        self.difficulty_buttons = []  # New: Store button references
         
         for level in range(1, 4):
             btn = tk.Button(
                 difficulty_frame,
                 text=["Easy", "Medium", "Hard"][level-1],
                 command=lambda l=level: self.set_difficulty(l),
-                font=('Inter', 10),
-                bg='#3b82f6' if level == 2 else '#1e40af',
-                fg='white',
+                font=('Inter', 10, 'bold'),
+                bg='#1e40af',  # Changed: All buttons start with same color
+                fg='black',
                 activebackground='#2563eb'
             )
             btn.pack(side=tk.LEFT, padx=2)
+            self.difficulty_buttons.append(btn)  # Store button reference
 
     def create_game_board(self):
-        # Making of the empty boatd
+        # Making of the empty board
         self.canvas = tk.Canvas(
             self.window,
             width=COLUMNS * CELL_SIZE + 2 * PADDING,
@@ -111,7 +115,8 @@ class ConnectFour:
         self.canvas.bind('<Motion>', self.handle_hover)
 
     def handle_hover(self, event):
-        if self.game_over or self.current_player == COMPUTER:
+        # Check if game has started
+        if not self.game_started or self.game_over or self.current_player == COMPUTER:
             return
             
         col = (event.x - PADDING) // CELL_SIZE
@@ -130,6 +135,11 @@ class ConnectFour:
                 )
 
     def handle_click(self, event):
+        # Check if game has started
+        if not self.game_started:
+            messagebox.showinfo("Info", "Please select a difficulty level first!")
+            return
+            
         if self.game_over or self.current_player == COMPUTER:
             return
             
@@ -233,14 +243,6 @@ class ConnectFour:
 
     def board_full(self, board):
         return not any(board[ROWS-1][col] == EMPTY for col in range(COLUMNS))
-    
-        """
-        Logic from computer.py implementation
-        Main changes are:
-
-            -value  = {-100000} to  {-float('inf')} 
-
-        """
 
     def score_position(self, board):
         score = 0
@@ -262,21 +264,10 @@ class ConnectFour:
         return (self.check_winner(COMPUTER) or 
                 self.check_winner(PLAYER) or 
                 self.board_full(board))
-    '''
-    Manimax algortihm is implemented here!
-    Uses recursion of this functions to think x steps ahead. The number
-    of steps ahead that the computer will "think" is based off of diffciulty
-    set by the player. Lower the depth, the easier the game.
-    '''   
-    
 
     def minimax(self, board, depth, alpha, beta, max_player):
         valid_locations = self.get_valid_columns(board)
         is_terminal = self.is_end_of_game(board)
-        '''
-        If the depth is zero or maximum depth is reached, then the game
-        is over or no more calculations will be done due to the difficulty set.
-        '''
 
         if depth == 0 or is_terminal:
             if is_terminal:
@@ -334,6 +325,11 @@ class ConnectFour:
 
     def reset_game(self):
         """Reset the game state and clear the board"""
+        # Only allow reset if a difficulty has been selected
+        if self.ai_difficulty is None:
+            messagebox.showinfo("Info", "Please select a difficulty level first!")
+            return
+            
         # Reset game state
         self.board = np.zeros((ROWS, COLUMNS), dtype=int)
         self.game_over = False
@@ -361,9 +357,22 @@ class ConnectFour:
         self.canvas.bind('<Motion>', self.handle_hover)
 
     def set_difficulty(self, level):
-        """Set the AI difficulty level and reset the game"""
+        """Set the AI difficulty level and start the game"""
         self.ai_difficulty = level
+        self.game_started = True  # New: Mark game as started
+        self.reset_button.config(state=tk.NORMAL)  # Enable reset button
+
+        colors = [EASY_COLOR, MEDIUM_COLOR, HARD_COLOR]
+        
+        # Update button colors to show selected difficulty
+        for i, button in enumerate(self.difficulty_buttons):
+            if i + 1 == level:
+                button.config(bg=colors[level - 1])  # Highlight selected
+            else:
+                button.config(bg='#1e40af')  # Reset others
+        
         self.reset_game()
+        self.status_label.config(text="Your turn!")  # Update status
 
     def run(self):
         self.window.mainloop()
