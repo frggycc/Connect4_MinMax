@@ -60,11 +60,11 @@ def next_free_row(col, board):
         
 '''
 TODO
-Default depth set to 2. Change so that player can choose difficuly
-or keep it to two.
+Default depth set to 2: Currently, too easy and AI ends up only
+picking center columns rather than picking based on winning lines
 '''
 def pick_best_move(board, player):
-    depth = 2
+    depth = 4
 
     # Computer is the maximizing player
     if player == COMPUTER:
@@ -229,39 +229,6 @@ def main():
 
             # Change players
             turn = PLAYER
-            
-
-            # # Only with two humna players
-            # print("")
-            # print_board(board)
-            # print("PLAYER TWO'S turn - O Pieces")
-
-            # # reset valid_move value
-            # valid_move = False
-            # while not valid_move:
-            #     col = int(input("Choose a column: "))
-            #     if col >= COLUMNS or col < 0:
-            #         print("Choose a number between 0 and 6")
-            #         continue
-
-            #     # Check if valid placement
-            #     if valid_placement(col, board):
-            #         valid_move = True
-            #     else:
-            #         print("Column is full. Choose another column.")
-
-            # # Place piece
-            # row = next_free_row(col, board)
-            # place_piece(row, col, turn, board)
-
-            # # Check if winner
-            # if winning_move(board, turn):
-            #     print_board(board)
-            #     print("CONGRATS PLAYER 2! YOU WIN!")
-            #     winner_found = True
-
-            # # Change players
-            # turn = PLAYER
 
 if __name__ == "__main__":
     main()
