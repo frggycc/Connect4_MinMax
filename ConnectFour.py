@@ -1,7 +1,7 @@
 import numpy
 from computer import *
 
-# Set up out board with zeros
+# Set up boards with zeros
 ROWS = 6
 COLUMNS = 7
 PLAYER = 1
