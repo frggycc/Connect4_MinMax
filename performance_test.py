@@ -206,9 +206,9 @@ if __name__ == "__main__":
     
     # Print summary to console
     print("\nPerformance Summary:")
-    print("-" * 80)
+    print("-" * 65)
     print(f"{'Difficulty':<10} {'Depth':<6} {'Avg W/ Pruning':<15} {'Avg W/o Pruning':<15} {'Speedup':<8}")
-    print("-" * 80)
+    print("-" * 65)
     for depth, data in sorted(summary.items()):
         print(f"{data['difficulty']:<10} {depth:<6} {data['avg_time_with_pruning']:<15.6f} {data['avg_time_without_pruning']:<15.6f} {data['avg_speedup']:<5.2f}x")
-    print("-" * 80)
+    print("-" * 65)
