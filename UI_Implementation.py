@@ -79,7 +79,7 @@ class ConnectFour:
             btn = tk.Button(
                 difficulty_frame,
                 text=["Easy", "Medium", "Hard"][level-1],
-                command=lambda l=level * 2: self.set_difficulty(l),
+                command=lambda l=level + 1: self.set_difficulty(l),
                 font=('Inter', 10, 'bold'),
                 bg='#1e40af',  # Changed: All buttons start with same color
                 fg='black',
@@ -256,29 +256,30 @@ class ConnectFour:
         
         # Calculate the scores of the computer based on position on board
         score += np.sum(evaluation_board[board == COMPUTER])
+        score -= np.sum(evaluation_board[board == PLAYER])
 
-        def count_lines(player, x_in_a_row):
+        def count_lines(piece, x_in_a_row):
             count = 0
 
             # Horizontal
             for row in range(ROWS):
                 for col in range(COLUMNS - x_in_a_row + 1):
-                    if all(board[row][col + i] == player for i in range(x_in_a_row)):
+                    if all(board[row][col + i] == piece for i in range(x_in_a_row)):
                         count += 1
             # Vertical
             for row in range(ROWS - x_in_a_row + 1):
                 for col in range(COLUMNS):
-                    if all(board[row + i][col] == player for i in range(x_in_a_row)):
+                    if all(board[row + i][col] == piece for i in range(x_in_a_row)):
                         count += 1
             # Diagonal (positive)
             for row in range(ROWS - x_in_a_row + 1):
                 for col in range(COLUMNS - x_in_a_row + 1):
-                    if all(board[row + i][col + i] == player for i in range(x_in_a_row)):
+                    if all(board[row + i][col + i] == piece for i in range(x_in_a_row)):
                         count += 1
             # Diagonal (negative)
             for row in range(x_in_a_row - 1, ROWS):
                 for col in range(COLUMNS - x_in_a_row + 1):
-                    if all(board[row - i][col + i] == player for i in range(x_in_a_row)):
+                    if all(board[row - i][col + i] == piece for i in range(x_in_a_row)):
                         count += 1
             return count
 
