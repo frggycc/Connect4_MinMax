@@ -79,7 +79,7 @@ class ConnectFour:
             btn = tk.Button(
                 difficulty_frame,
                 text=["Easy", "Medium", "Hard"][level-1],
-                command=lambda l=level + 1: self.set_difficulty(l),
+                command=lambda l=level: self.set_difficulty(l),
                 font=('Inter', 10, 'bold'),
                 bg='#1e40af',  # Changed: All buttons start with same color
                 fg='black',
@@ -174,7 +174,7 @@ class ConnectFour:
             self.window.after(1000, self.make_computer_move)
 
     def make_computer_move(self):
-        col, _ = self.minimax(self.board, self.ai_difficulty, -float('inf'), float('inf'), True)
+        col, _ = self.minimax(self.board, self.ai_difficulty, -float('inf'), float('inf'), False)
         self.make_move(col)
 
     def draw_piece(self, row, col):
@@ -243,6 +243,31 @@ class ConnectFour:
 
     def board_full(self, board):
         return not any(board[ROWS-1][col] == EMPTY for col in range(COLUMNS))
+    
+    def count_lines(self, board, piece, x_in_a_row):
+        count = 0
+
+        # Horizontal
+        for row in range(ROWS):
+            for col in range(COLUMNS - x_in_a_row + 1):
+                if all(board[row][col + i] == piece for i in range(x_in_a_row)):
+                    count += 1
+        # Vertical
+        for row in range(ROWS - x_in_a_row + 1):
+            for col in range(COLUMNS):
+                if all(board[row + i][col] == piece for i in range(x_in_a_row)):
+                    count += 1
+        # Diagonal (positive)
+        for row in range(ROWS - x_in_a_row + 1):
+            for col in range(COLUMNS - x_in_a_row + 1):
+                if all(board[row + i][col + i] == piece for i in range(x_in_a_row)):
+                    count += 1
+        # Diagonal (negative)
+        for row in range(x_in_a_row - 1, ROWS):
+            for col in range(COLUMNS - x_in_a_row + 1):
+                if all(board[row - i][col + i] == piece for i in range(x_in_a_row)):
+                    count += 1
+        return count
 
     def score_position(self, board):
         score = 0
@@ -255,42 +280,16 @@ class ConnectFour:
                                      [1, 2, 2, 3, 2, 2, 1]])
         
         # Calculate the scores of the computer based on position on board
-        score += np.sum(evaluation_board[board == COMPUTER])
-        score -= np.sum(evaluation_board[board == PLAYER])
+        score -= np.sum(evaluation_board[board == COMPUTER])
+        score += np.sum(evaluation_board[board == PLAYER])
+        
+        # Calculate points for current piece (COMPUTER) based number of lines
+        score -= self.count_lines(board, COMPUTER, 3) * 100
+        score -= self.count_lines(board, COMPUTER, 2) * 10
 
-        def count_lines(piece, x_in_a_row):
-            count = 0
-
-            # Horizontal
-            for row in range(ROWS):
-                for col in range(COLUMNS - x_in_a_row + 1):
-                    if all(board[row][col + i] == piece for i in range(x_in_a_row)):
-                        count += 1
-            # Vertical
-            for row in range(ROWS - x_in_a_row + 1):
-                for col in range(COLUMNS):
-                    if all(board[row + i][col] == piece for i in range(x_in_a_row)):
-                        count += 1
-            # Diagonal (positive)
-            for row in range(ROWS - x_in_a_row + 1):
-                for col in range(COLUMNS - x_in_a_row + 1):
-                    if all(board[row + i][col + i] == piece for i in range(x_in_a_row)):
-                        count += 1
-            # Diagonal (negative)
-            for row in range(x_in_a_row - 1, ROWS):
-                for col in range(COLUMNS - x_in_a_row + 1):
-                    if all(board[row - i][col + i] == piece for i in range(x_in_a_row)):
-                        count += 1
-            return count
-
-        # Calculate points for current piece (COMPUTER) based on winning lines
-        score += count_lines(COMPUTER, 3) * 450
-        score += count_lines(COMPUTER, 2) * 10
-
-        # Recalculate points based on opponent's number of winning lines
-        # If opponent has 3 in a row, priotize stopping it
-        score -= count_lines(PLAYER, 3) * 500
-        score -= count_lines(PLAYER, 2) * 8
+        # Recalculate points based on opponent's number of lines
+        score += self.count_lines(board, PLAYER, 3) * 80
+        score += self.count_lines(board, PLAYER, 2) * 8
 
         return score
 
@@ -306,9 +305,9 @@ class ConnectFour:
         if depth == 0 or is_terminal:
             if is_terminal:
                 if self.check_winner(COMPUTER):
-                    return (None, 1000000)
-                elif self.check_winner(PLAYER):
                     return (None, -1000000)
+                elif self.check_winner(PLAYER):
+                    return (None, 1000000 + 5000)
                 else:  # Game is over, no more valid moves
                     return (None, 0)
             else:  # Depth is zero
@@ -322,7 +321,7 @@ class ConnectFour:
             for col in valid_locations:
                 row = self.next_free_row(col, board)
                 temp_board = board.copy()
-                self.place_piece(row, col, COMPUTER, temp_board)
+                self.place_piece(row, col, PLAYER, temp_board)
 
                 # Calculate a score based on the position of the dropped piece
                 new_score = self.minimax(temp_board, depth-1, alpha, beta, False)[1]
@@ -343,7 +342,7 @@ class ConnectFour:
             for col in valid_locations:
                 row = self.next_free_row(col, board)
                 temp_board = board.copy()
-                self.place_piece(row, col, PLAYER, temp_board)
+                self.place_piece(row, col, COMPUTER, temp_board)
 
                 # Calculate a score based on the position of the dropped piece
                 new_score = self.minimax(temp_board, depth-1, alpha, beta, True)[1]
@@ -392,7 +391,13 @@ class ConnectFour:
 
     def set_difficulty(self, level):
         """Set the AI difficulty level and start the game"""
-        self.ai_difficulty = level
+        if level == 1:
+            self.ai_difficulty = 2
+        elif level == 2:
+            self.ai_difficulty = 4
+        else:
+            self.ai_difficulty = 5
+        
         self.game_started = True  # New: Mark game as started
         self.reset_button.config(state=tk.NORMAL)  # Enable reset button
 
