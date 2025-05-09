@@ -268,7 +268,73 @@ class ConnectFour:
                 if all(board[row - i][col + i] == piece for i in range(x_in_a_row)):
                     count += 1
         return count
-
+    
+    """ Check to see if next move would lead to a 4-in-a-row """
+    def has_possible_four(self, board, piece):
+        # Helper function to check if an empty position is a valid move
+        def is_valid_move(row, col):
+            # Check if position is in bounds
+            if not (0 <= row < ROWS and 0 <= col < COLUMNS):
+                return False
+                
+            # Check if position is empty
+            if board[row][col] != EMPTY:
+                return False
+                
+            # Check if position has support beneath to make four in a row
+            return row == 0 or board[row-1][col] != EMPTY
+        
+        # Check a window of 4 positions
+        def check_window(window, positions):
+            # Count pieces and empty spaces
+            piece_count = window.count(piece)
+            empty_count = window.count(EMPTY)
+            
+            # If there are exactly 3 pieces and 1 empty space
+            if piece_count == 3 and empty_count == 1:
+                # Find where the empty space is
+                empty_index = window.index(EMPTY)
+                empty_row, empty_col = positions[empty_index]
+                
+                # Check valid move
+                if is_valid_move(empty_row, empty_col):
+                    return True
+            return False
+        
+        # Check horizontal windows
+        for row in range(ROWS):
+            for col in range(COLUMNS - 3):
+                window = [board[row][col + i] for i in range(4)]
+                positions = [(row, col + i) for i in range(4)]
+                if check_window(window, positions):
+                    return True
+        
+        # Check vertical windows
+        for row in range(ROWS - 3):
+            for col in range(COLUMNS):
+                window = [board[row + i][col] for i in range(4)]
+                positions = [(row + i, col) for i in range(4)]
+                if check_window(window, positions):
+                    return True
+        
+        # Check positive diagonal windows
+        for row in range(ROWS - 3):
+            for col in range(COLUMNS - 3):
+                window = [board[row + i][col + i] for i in range(4)]
+                positions = [(row + i, col + i) for i in range(4)]
+                if check_window(window, positions):
+                    return True
+        
+        # Check negative diagonal windows
+        for row in range(3, ROWS):
+            for col in range(COLUMNS - 3):
+                window = [board[row - i][col + i] for i in range(4)]
+                positions = [(row - i, col + i) for i in range(4)]
+                if check_window(window, positions):
+                    return True
+        
+        return False
+        
     def score_position(self, board):
         score = 0
 
@@ -290,6 +356,12 @@ class ConnectFour:
         # Recalculate points based on opponent's number of lines
         score += self.count_lines(board, PLAYER, 3) * 80
         score += self.count_lines(board, PLAYER, 2) * 8
+
+        # If opponent has a possible 4-in-a-row, prioritize stopping it
+        if (self.has_possible_four(board, PLAYER) == True):
+            score += 20000
+        if (self.has_possible_four(board, COMPUTER) == True):
+            score -= 10000
 
         return score
 
